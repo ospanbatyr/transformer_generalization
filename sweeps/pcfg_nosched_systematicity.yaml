@@ -19,27 +19,18 @@ parameters:
     value: pcfg_transformer
   transformer.variant:
     values:
-      - relative_universal
-      - relative
-      - universal_noscale
-      - scaledinit
-      - universal_scaledinit
       - noscale
-      - opennmt
-      - universal_opennmt
   pcfg.split:
     value: systematicity
   lr:
-    value: 1e-4
+    value: 5e-5 # 1e-4
+  seed:
+    value: 123
   stop_after:
-    value: 300000
+    value: 600000 # 300000
   amp:
     value: 1
   sweep_id_for_grid_search:
     distribution: categorical
     values:
       - 1
-      - 2
-      - 3
-      - 4
-      - 5

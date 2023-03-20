@@ -34,6 +34,11 @@ class ArgumentParser:
 
     @staticmethod
     @none_parser
+    def str_or_none_parser(x):
+        return str(x)
+
+    @staticmethod
+    @none_parser
     def float_or_none_parser(x):
         return float(x)
 
