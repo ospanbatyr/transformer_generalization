@@ -24,12 +24,8 @@ parameters:
   test_batch_size:
     value: 512
   stop_after:
-    value: 50000
+    value: 10000
   sweep_id_for_grid_search:
     distribution: categorical
     values:
       - 1
-      - 2
-      - 3
-      - 4
-      - 5

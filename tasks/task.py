@@ -5,11 +5,14 @@ import framework
 import torch.utils.data
 import torch.cuda.amp
 from typing import Optional, Dict, Any, Tuple, List, Iterable
-from interfaces import Result
 import optimizer
-from interfaces import Result, ModelInterface
+from interfaces import Result, ModelInterface, EncoderDecoderResult
 from tqdm import tqdm
+import pickle
+import os
 from dataclasses import dataclass
+import math
+from framework.metrics.evaluate import evaluate_bleu
 
 
 @dataclass
@@ -18,14 +21,13 @@ class LastBestMarker:
     loss: float
     accuracy: float
 
-
 class Task:
     MAX_LENGHT_PER_BATCH = None
     valid_loaders: framework.data_structures.DotDict
     model_interface: ModelInterface
     batch_dim: int
-    TRAIN_NUM_WORKERS = 1
-    VALID_NUM_WORKERS = 1
+    TRAIN_NUM_WORKERS = 5
+    VALID_NUM_WORKERS = 5
     train_set: torch.utils.data.Dataset
     train_loader: torch.utils.data.DataLoader
     model: torch.nn.Module
@@ -56,6 +58,7 @@ class Task:
         self.forward_time_meter = framework.utils.ElapsedTimeMeter()
         self.load_time_meter = framework.utils.ElapsedTimeMeter()
         self.plot_time_meter = framework.utils.ElapsedTimeMeter()
+        self.dataset_name = self.init_dataset_name()
 
         if self.helper.args.lr_sched.type == "step":
             self.lr_scheduler = optimizer.StepLrSched(self.helper.args.lr, self.helper.args.lr_sched.steps,
@@ -66,6 +69,9 @@ class Task:
                                                       self.helper.args.lr_warmup)
         else:
             assert False
+
+        if self.helper.args.indices_path is not None:
+            self.indices_path = self.get_indices_path()
 
         self.avg_num_chunks = framework.utils.Average()
 
@@ -83,6 +89,14 @@ class Task:
 
         self.helper.saver["model"] = self.model
         self.helper.restore()
+
+    def init_dataset_name(self) -> str:
+        dataset_names = ["scan", "cogs", "cfq", "dm_math", "pcfg"]
+        for name in dataset_names:
+            if name in self.helper.args.task:
+                return name
+
+        assert False, "Wrong dataset name or task definition"
 
     def create_valid_loader(self, vset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader:
         return torch.utils.data.DataLoader(vset, batch_size=self.test_batch_size,
@@ -117,6 +131,13 @@ class Task:
         self.set_optimizer_lr(lr)
         return lr
 
+    def get_indices_path(self) -> str:
+        cwd = os.getcwd()
+        print(f"cwd: {cwd}, indices_path: {self.helper.args.indices_path}", flush=True)
+        indices_path = os.path.join(cwd, self.helper.args.indices_path)
+        print(f"new indices_path: {indices_path}", flush=True)
+        return indices_path
+
     def set_lr(self):
         if self.helper.args.lr_sched.type == "step":
             self.set_linear_warmup(self.helper.state.iter, self.helper.args.lr_warmup,
@@ -136,7 +157,7 @@ class Task:
             loss_sum = 0
 
             test = set.start_test()
-            for d in tqdm(loader):
+            for d in tqdm(loader, "validation"):
                 d = self.prepare_data(d)
                 res = self.model_interface(d)
                 digits = self.model_interface.decode_outputs(res)
@@ -270,11 +291,20 @@ class Task:
         with self.forward_time_meter:
             self.set_lr()
             data = self.prepare_data(self.get_train_batch())
+            
             self.optimizer.zero_grad(set_to_none=True)
 
             n_chunks = self.get_n_chunks(data)
             res_list = []
             weights = []
+
+            print(f'data["in"].shape, data["out"].shape: {data["in"].shape, data["out"].shape}')
+
+            in_str = [self.train_set._cache.in_vocabulary(s) for s in data["in"].transpose(0, 1).tolist()]
+            out_str = [self.train_set._cache.out_vocabulary(s) for s in data["out"].transpose(0, 1).tolist()]
+
+            in_str: List[str] = [" ".join(s[:int(slen)]) for s, slen in zip(in_str, data["in_len"].tolist())]
+            out_str: List[str] = [" ".join(s[:int(slen)]) for s, slen in zip(out_str, data["out_len"].tolist())]
 
             self.avg_num_chunks.add(n_chunks)
 
@@ -297,18 +327,99 @@ class Task:
             self.helper.state.iter += 1
             res = res_list[0].__class__.merge(res_list, weights)
 
-        return res, plots
+        return res, plots, in_str, out_str
+
+
+    def save_scores(self, res: EncoderDecoderResult, bleus: List[float], step_idx: int, out_str: List[str], epoch: int, store_path: str="scores"):
+        file_types = ["chia", "ppl", "idx", "bleu"]
+
+        store_dir_path = os.path.join(store_path, self.dataset_name)
+        os.makedirs(store_dir_path, exist_ok=True)
+        
+        for ftype in file_types:
+            if ftype == "chia": f_save = res.chia 
+            elif ftype == "ppl": f_save = res.ppl
+            elif ftype == "idx": f_save = res.idx
+            elif ftype == "bleu": f_save = bleus
+            else: assert False, "Unknown file type"
+
+            file_name = os.path.join(store_dir_path, f"epoch{epoch}_stepidx{step_idx}_{ftype}.pickle")
+
+            with open(file_name, 'wb') as handle:
+                pickle.dump(f_save, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+    def update_data_indices(self, idx_to_sentences: Dict[int, Dict[str, str]], res: EncoderDecoderResult, \
+                            in_str: List[str], out_str: List[str]) -> Dict[int, Dict[str, str]]:
+
+        idx = res.idx.tolist()
+        new_idx_to_sentences = {i: {'in': s_in, 'out': s_out} for i, s_in, s_out in zip(idx, in_str, out_str)}
+        idx_to_sentences.update(new_idx_to_sentences)
+        return idx_to_sentences
+
+
+    def save_idx_to_sentences(self, idx_to_sentences: Dict[int, Dict[str, str]], store_path: str="scores"):
+        store_dir_path = os.path.join(store_path, self.dataset_name)
+        os.makedirs(store_dir_path, exist_ok=True)
+        file_name = os.path.join(store_dir_path, "idx_to_sentences.pickle")
+
+        with open(file_name, 'wb') as handle:
+            pickle.dump(idx_to_sentences, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+    def report_bleu(self, res: EncoderDecoderResult, out_str: List[str]) -> List[float]:
+        #print(f"res.outputs.shape: {res.outputs.shape}")
+        pred_seq = torch.argmax(res.outputs, -1)
+        #print(f"pred_seq.shape: {pred_seq.shape}")
+
+        pred_seq = [self.train_set._cache.out_vocabulary(s) for s in pred_seq.transpose(0, 1).tolist()]
+        pred_str: List[str] = [" ".join(s[:int(slen)]) for s, slen in zip(pred_seq, res.out_lengths.tolist())]
+
+        #print(f"pred_str[0], pred_str[-1]: {pred_str[0], pred_str[-1]}")
+
+        bleus = evaluate_bleu(pred_str, out_str)
+        #print(f"sum(bleus), len(bleus): {sum(bleus), len(bleus)}")
+        return bleus
+
 
     def train(self):
         self.loss_average.reset()
 
+        epoch = 0
+        epoch_loss, step_count = 0, 0
+        batch_count = math.ceil(len(self.train_set) / self.helper.args.batch_size)
+        #print(f"Train set length, State size, Batch count: {len(self.train_set), self.helper.args.batch_size, batch_count}")
+
         self.data_iter = iter(self.train_loader)
 
-        while (self.helper.args.stop_after or 10e10) > self.helper.state.iter:
+        idx_to_sentences: Dict[int, Dict[str, str]] = {} # idx -> {"in": "Who is ..?", "out": "SELECT DISTINCT .."}
+
+        pbar = tqdm(range(self.helper.args.stop_after or 10e10))
+        for step_idx in pbar:
+            if step_idx % batch_count == 0:
+                if step_idx != 0:
+                    self.helper.summary.log({"train_loss_epoch": epoch_loss / step_count}, step=epoch)
+                epoch_loss, step_count = 0, 0
+                epoch += 1
+                pbar.set_description(f"Training: Epoch {epoch}")
+
+
+            # print(f"step_idx: {step_idx}", flush=True)
             self.load_time_meter.stop()
 
-            res, plots = self.train_step()
+            res, plots, in_str, out_str = self.train_step()
+
             plots.update(self.plot(res))
+
+            bleus = self.report_bleu(res, out_str)
+
+            self.save_scores(res, bleus, step_idx, out_str, epoch)
+
+            epoch_loss += res.loss
+            step_count += 1
+
+            if epoch == 1:
+                self.update_data_indices(idx_to_sentences, res, in_str, out_str)
 
             with self.plot_time_meter:
                 self.helper.summary.log(plots)
@@ -316,6 +427,8 @@ class Task:
             self.load_time_meter.start()
 
             self.helper.tick()
+
+        self.save_idx_to_sentences(idx_to_sentences)
 
     @property
     def test_batch_size(self):

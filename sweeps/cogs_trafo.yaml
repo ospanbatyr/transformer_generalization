@@ -17,14 +17,7 @@ parameters:
     value: cogs_trafo_small
   transformer.variant:
     values:
-      - opennmt
       - noscale
-      - scaledinit
-      - universal_noscale
-      - relative
-      - relative_universal
-      - universal_scaledinit
-      - universal_opennmt
   lr_sched.type:
     value: step
   grad_clip:
@@ -38,14 +31,12 @@ parameters:
   test_interval:
     value: 500
   test_batch_size:
-    value: 512
+    value: 256
   stop_after:
-    value: 50000
+    value: 15000
+  seed:
+    value: 123
   sweep_id_for_grid_search:
     distribution: categorical
     values:
       - 1
-      - 2
-      - 3
-      - 4
-      - 5

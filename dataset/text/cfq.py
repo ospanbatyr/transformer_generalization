@@ -96,4 +96,5 @@ class CFQ(TextDataset):
 
         in_sentences, out_sentences = self.load_data(os.path.join(self.cache_dir, "cfq/dataset.json"))
         assert len(in_sentences) == len(out_sentences)
+
         return TextDatasetCache().build(index_table, in_sentences, out_sentences, split_punctuation=False)

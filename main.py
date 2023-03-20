@@ -40,6 +40,7 @@ def register_args(parser: framework.helpers.ArgumentParser):
                                                                 "mcd3"])
     parser.add_argument("-max_length_per_batch", default="none", parser=parser.int_or_none_parser)
     parser.add_argument("-log_sample_level_loss", default=False)
+    parser.add_argument("-indices_path", default="none", parser=str_or_none_parser)
 
     parser.add_profile([
         parser.Profile("cfq_trafo", {
@@ -51,10 +52,10 @@ def register_args(parser: framework.helpers.ArgumentParser):
             "transformer.encoder_n_layers": 2,
             "transformer.decoder_n_layers": 2,
             "grad_clip": 1,
-            "stop_after": 50000,
+            "stop_after": 50000, # TODO 50000,
             "dropout": 0.1,
             "batch_size": 512,
-            "lr": 1e-4,
+            "lr": 5e-5, # 1e-4
         }),
 
         parser.Profile("cfq_universal_trafo", {
@@ -77,14 +78,14 @@ def register_args(parser: framework.helpers.ArgumentParser):
             "stop_after": 50000,
             "dropout": 0.1,
             "batch_size": 128,
-            "lr": 2,
+            "lr": 1, # 2
             "lr_sched.type": "noam",
             "lr_warmup": 4000,
         }),
 
         parser.Profile("deepmind_math", {
             "task": "dm_math_transformer",
-            "lr": 1e-4,
+            "lr": 5e-5, #1e-4,
             "stop_after": 50000,
             "batch_size": 256,
             "mask_loss_weight": 0.001,
@@ -104,14 +105,14 @@ def register_args(parser: framework.helpers.ArgumentParser):
             "transformer.ff_multiplier": 4,
             "transformer.encoder_n_layers": 6,
             "transformer.decoder_n_layers": 6,
-            "lr": 1e-3,
+            "lr": 5e-4, # 1e-3,
             "grad_clip": "1",
             "stop_after": 1000000,
-            "batch_size": 64
+            "batch_size": 32
         }),
 
         parser.Profile("trafo_scan", {
-            "lr": 1e-3,
+            "lr": 5e-4, # 1e-3,
             "grad_clip": "5",
             "stop_after": 15000,
             "batch_size": 256,

@@ -37,6 +37,8 @@ class TextDatasetCache:
         self.in_sentences = [self.in_vocabulary(s) for s in in_sentences]
         self.out_sentences = [self.out_vocabulary(s) for s in out_sentences]
 
+        assert len(self.in_sentences) == len(self.out_sentences), "In and out sentence counts do not match"
+
         print("Calculating length statistics")
         counts, bins = np.histogram([len(i)+len(o) for i, o in zip(self.in_sentences, self.out_sentences)])
         self.sum_len_histogram = {k: v for k, v in zip(bins.tolist(), counts.tolist())}
@@ -133,7 +135,7 @@ class TextDataset(torch.utils.data.Dataset):
         values = [histogram[k] for k in keys]
         percent = (np.cumsum(values) * (100.0 / sum(histogram.values()))).tolist()
         return ", ".join(f"{k:.1f}: {v} (>= {p:.1f}%)" for k, v, p in zip(keys, values, percent))
-     
+
     def __init__(self, sets: List[str] = ["train"], split_type: List[str] = ["simple"], cache_dir: str = "./cache/",
                  shared_vocabulary: bool = False):
         super().__init__()
@@ -195,11 +197,14 @@ class TextDataset(torch.utils.data.Dataset):
         index = self.my_indices[item]
         in_seq, out_seq = self.get_seqs(index)
 
+        print(f"index: {index}, in_seq: {in_seq}", flush=True)
+
         return {
             "in": np.asarray(in_seq, np.int16),
             "out": np.asarray(out_seq, np.int16),
             "in_len": len(in_seq),
-            "out_len": len(out_seq)
+            "out_len": len(out_seq),
+            "idx": np.asarray(item, np.int32)
         }
 
     def get_output_size(self):

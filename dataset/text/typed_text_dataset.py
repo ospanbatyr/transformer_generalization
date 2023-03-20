@@ -47,5 +47,6 @@ class TypedTextDataset(TextDataset):
             "out": np.asarray(out_seq, np.int16),
             "in_len": len(in_seq),
             "out_len": len(out_seq),
-            "type": self._cache.types[index]
+            "type": self._cache.types[index],
+            "idx": np.asarray(item, np.int32)
         }
