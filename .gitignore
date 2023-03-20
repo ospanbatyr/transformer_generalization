@@ -3,3 +3,5 @@ save
 __pycache__
 wandb
 cache
+slurm_logs/
+scores/
