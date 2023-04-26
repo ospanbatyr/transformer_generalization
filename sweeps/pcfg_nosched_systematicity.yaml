@@ -23,11 +23,11 @@ parameters:
   pcfg.split:
     value: systematicity
   lr:
-    value: 5e-5 # 1e-4
+    value: 1e-4
   seed:
     value: 123
   stop_after:
-    value: 600000 # 300000
+    value: 300000
   amp:
     value: 1
   sweep_id_for_grid_search:

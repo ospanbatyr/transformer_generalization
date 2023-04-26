@@ -7,7 +7,7 @@ import framework
 
 
 class COGSTransformer(TransformerMixin, Task):
-    VALID_NUM_WORKERS = 0
+    VALID_NUM_WORKERS = 2
 
     def __init__(self, helper: framework.helpers.TrainingHelper):
         super().__init__(helper)

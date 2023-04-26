@@ -4,7 +4,7 @@ from .transformer_mixin import TransformerMixin
 
 
 class ScanTransformer(TransformerMixin, Task):
-    VALID_NUM_WORKERS = 0
+    VALID_NUM_WORKERS = 2
 
     def create_datasets(self):
         self.batch_dim = 1

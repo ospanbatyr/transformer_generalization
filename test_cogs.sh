@@ -28,11 +28,11 @@
 #
 #SBATCH --job-name=wandb_s2s_comp
 #SBATCH --nodes 1
-#SBATCH --ntasks-per-node=5
+#SBATCH --ntasks-per-node=2
 #SBATCH --partition=ai
 #SBATCH --account=ai
 #SBATCH --qos=ai
-#SBATCH --mem=60G
+#SBATCH --mem=24G
 #SBATCH --gres=gpu:tesla_t4:1
 #SBATCH --time=1-00:00:00
 #SBATCH --output=slurm_logs/cogs_s2s-%J.log
@@ -68,7 +68,7 @@ echo
 ##################### !!! DO NOT EDIT ABOVE THIS LINE !!! ######################
 ################################################################################
 
-wandb agent osmanbatur/transformer_generalization/3lgmpm9a
+wandb agent osmanbatur/transformer_generalization/uw5f74hp
 
 # DON'T USE ADDRESS BELOW. 
 # DO USE TOKEN BELOW

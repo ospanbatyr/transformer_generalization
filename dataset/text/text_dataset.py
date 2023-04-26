@@ -152,6 +152,7 @@ class TextDataset(torch.utils.data.Dataset):
             self._cache = self._load_dataset()
             TextDataset.static_data[self.__class__.__name__] = self._cache
 
+        # TODO change here, with cogs, do not use cache in vocab, use in vocab directly
         if shared_vocabulary:
             self.in_vocabulary = self._cache.in_vocabulary + self._cache.out_vocabulary
             self.out_vocabulary = self.in_vocabulary
@@ -196,8 +197,6 @@ class TextDataset(torch.utils.data.Dataset):
     def __getitem__(self, item: int) -> Dict[str, Any]:
         index = self.my_indices[item]
         in_seq, out_seq = self.get_seqs(index)
-
-        print(f"index: {index}, in_seq: {in_seq}", flush=True)
 
         return {
             "in": np.asarray(in_seq, np.int16),

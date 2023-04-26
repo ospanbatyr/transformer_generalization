@@ -28,16 +28,14 @@
 #
 #SBATCH --job-name=wandb_s2s_comp
 #SBATCH --nodes 1
-#SBATCH --ntasks-per-node=5
+#SBATCH --ntasks-per-node=2
 #SBATCH --partition=ai
 #SBATCH --account=ai
 #SBATCH --qos=ai
-#SBATCH --mem=60G
-#SBATCH --gres=gpu:tesla_t4:1
+#SBATCH --mem=24G
+#SBATCH --gres=gpu:tesla_v100:1
 #SBATCH --time=1-00:00:00
 #SBATCH --output=slurm_logs/cfq_s2s-%J.log
-
-
 
 
 # Please read before you run: http://login.kuacc.ku.edu.tr/#h.3qapvarv2g49
@@ -68,7 +66,7 @@ echo
 ##################### !!! DO NOT EDIT ABOVE THIS LINE !!! ######################
 ################################################################################
 
-wandb agent osmanbatur/transformer_generalization/pp9dvbut
+wandb agent osmanbatur/transformer_generalization/tgz0i8wj
 
 # DON'T USE ADDRESS BELOW. 
 # DO USE TOKEN BELOW

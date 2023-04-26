@@ -18,14 +18,14 @@ class EncoderDecoderResult(Result):
     @staticmethod
     def merge(l: List, batch_weights: Optional[List[float]] = None):
         if len(l) == 1:
-            print(f"len(l): {len(l)}")
-            r = l[0]
-            print(f"r.loss.shape: {r.loss.shape}", flush=True)
-            print(f"r.outputs.shape: {r.outputs.shape}", flush=True)
-            print(f"r.out_lengths.shape: {r.out_lengths.shape}", flush=True)
-            print(f"r.chia.shape: {r.chia.shape}", flush=True)
-            print(f"r.idx.shape: {r.idx.shape}", flush=True)
-            print(f"r.ppl.shape: {r.ppl.shape}", flush=True)
+            # print(f"len(l): {len(l)}")
+            # r = l[0]
+            # print(f"r.loss.shape: {r.loss.shape}", flush=True)
+            # print(f"r.outputs.shape: {r.outputs.shape}", flush=True)
+            # print(f"r.out_lengths.shape: {r.out_lengths.shape}", flush=True)
+            # print(f"r.chia.shape: {r.chia.shape}", flush=True)
+            # print(f"r.idx.shape: {r.idx.shape}", flush=True)
+            # print(f"r.ppl.shape: {r.ppl.shape}", flush=True)
             return l[0]
 
         batch_weights = batch_weights if batch_weights is not None else [1] * len(l)
@@ -37,21 +37,21 @@ class EncoderDecoderResult(Result):
         idxs = torch.cat([r.idx for r in l], 0)
         ppls = torch.cat([r.ppl for r in l], 0)
 
-        print(f"loss.shape: {loss.shape}", flush=True)
-        print(f"out.shape: {out.shape}", flush=True)
-        print(f"lens.shape: {lens.shape}", flush=True)
+        # print(f"loss.shape: {loss.shape}", flush=True)
+        # print(f"out.shape: {out.shape}", flush=True)
+        # print(f"lens.shape: {lens.shape}", flush=True)
 
-        print(f"chias.shape: {chias.shape}", flush=True)
-        print(f"idxs.shape: {idxs.shape}", flush=True)
-        print(f"ppls.shape: {ppls.shape}", flush=True)
+        # print(f"chias.shape: {chias.shape}", flush=True)
+        # print(f"idxs.shape: {idxs.shape}", flush=True)
+        # print(f"ppls.shape: {ppls.shape}", flush=True)
 
-        for r in l:
-            print(f"len(l): {len(l)}")
-            print(f"r.out_lengths.shape: {r.out_lengths.shape}", flush=True)
-            print(f"r.chia.shape: {r.chia.shape}", flush=True)
-            print(f"r.idx.shape: {r.idx.shape}", flush=True)
-            print(f"r.ppl.shape: {r.ppl.shape}", flush=True)
+        # for r in l:
+        #     print(f"len(l): {len(l)}")
+        #     print(f"r.out_lengths.shape: {r.out_lengths.shape}", flush=True)
+        #     print(f"r.chia.shape: {r.chia.shape}", flush=True)
+        #     print(f"r.idx.shape: {r.idx.shape}", flush=True)
+        #     print(f"r.ppl.shape: {r.ppl.shape}", flush=True)
 
-        print("At merge function below 1st if clause!", flush=True)
+        # print("At merge function below 1st if clause!", flush=True)
         return_var = l[0].__class__(out, lens, loss, chias, ppls, idxs)
         return return_var

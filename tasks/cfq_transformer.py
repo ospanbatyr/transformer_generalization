@@ -9,7 +9,7 @@ import torch
 
 
 class CFQTransformer(TransformerMixin, Task):
-    VALID_NUM_WORKERS = 0
+    VALID_NUM_WORKERS = 2
     MAX_LENGHT_PER_BATCH = 101
 
     def create_datasets(self):

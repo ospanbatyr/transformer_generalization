@@ -26,8 +26,8 @@ class Task:
     valid_loaders: framework.data_structures.DotDict
     model_interface: ModelInterface
     batch_dim: int
-    TRAIN_NUM_WORKERS = 5
-    VALID_NUM_WORKERS = 5
+    TRAIN_NUM_WORKERS = 2
+    VALID_NUM_WORKERS = 2
     train_set: torch.utils.data.Dataset
     train_loader: torch.utils.data.DataLoader
     model: torch.nn.Module
@@ -58,7 +58,7 @@ class Task:
         self.forward_time_meter = framework.utils.ElapsedTimeMeter()
         self.load_time_meter = framework.utils.ElapsedTimeMeter()
         self.plot_time_meter = framework.utils.ElapsedTimeMeter()
-        self.dataset_name = self.init_dataset_name()
+        self.task_name = self.init_task_name()
 
         if self.helper.args.lr_sched.type == "step":
             self.lr_scheduler = optimizer.StepLrSched(self.helper.args.lr, self.helper.args.lr_sched.steps,
@@ -70,8 +70,9 @@ class Task:
         else:
             assert False
 
-        if self.helper.args.indices_path is not None:
-            self.indices_path = self.get_indices_path()
+        self.indices_path, self.subset_training = self.get_indices_path()
+
+        print(f"self.subset_training: {self.subset_training}")
 
         self.avg_num_chunks = framework.utils.Average()
 
@@ -90,13 +91,26 @@ class Task:
         self.helper.saver["model"] = self.model
         self.helper.restore()
 
-    def init_dataset_name(self) -> str:
+    def init_task_name(self) -> str:
         dataset_names = ["scan", "cogs", "cfq", "dm_math", "pcfg"]
+        
+        split_name = self.helper.args.scan.train_split
+        while not isinstance(split_name, str):
+            split_name = split_name[0]
+
+        print(f"Init task name full:", split_name)
+        print(f"Init task name:", split_name)
         for name in dataset_names:
+            if "scan" in self.helper.args.task:
+                return name + "_" + self.helper.args.scan.train_split[0][0]
             if name in self.helper.args.task:
                 return name
 
         assert False, "Wrong dataset name or task definition"
+
+
+    def subset_training(self) -> bool:
+        return self.helper.args.indices_path is not None
 
     def create_valid_loader(self, vset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader:
         return torch.utils.data.DataLoader(vset, batch_size=self.test_batch_size,
@@ -112,7 +126,7 @@ class Task:
 
         return torch.utils.data.DataLoader(loader, batch_size=self.helper.args.batch_size,
                                            sampler=framework.loader.sampler.InfiniteSampler(
-                                               loader, seed = seed),
+                                               loader, seed=seed, indices_path=self.indices_path),
                                            collate_fn=framework.loader.collate.VarLengthCollate(
                                                batch_dim=self.batch_dim),
                                            num_workers=self.TRAIN_NUM_WORKERS, pin_memory=True)
@@ -131,12 +145,16 @@ class Task:
         self.set_optimizer_lr(lr)
         return lr
 
-    def get_indices_path(self) -> str:
-        cwd = os.getcwd()
-        print(f"cwd: {cwd}, indices_path: {self.helper.args.indices_path}", flush=True)
-        indices_path = os.path.join(cwd, self.helper.args.indices_path)
-        print(f"new indices_path: {indices_path}", flush=True)
-        return indices_path
+    def get_indices_path(self) -> Tuple[str, bool]:
+        if self.helper.args.indices_path is not None:
+            cwd = os.getcwd()
+            print(f"cwd: {cwd}, indices_path: {self.helper.args.indices_path}", flush=True)
+            indices_path = os.path.join(cwd, self.helper.args.indices_path)
+            print(f"new indices_path: {indices_path}", flush=True)
+            return indices_path, True
+        else:
+            return None, False
+
 
     def set_lr(self):
         if self.helper.args.lr_sched.type == "step":
@@ -298,10 +316,15 @@ class Task:
             res_list = []
             weights = []
 
-            print(f'data["in"].shape, data["out"].shape: {data["in"].shape, data["out"].shape}')
+            # print(f'data["in"].shape, data["out"].shape: {data["in"].shape, data["out"].shape}')
 
-            in_str = [self.train_set._cache.in_vocabulary(s) for s in data["in"].transpose(0, 1).tolist()]
-            out_str = [self.train_set._cache.out_vocabulary(s) for s in data["out"].transpose(0, 1).tolist()]
+            if "cogs" in self.helper.args.task:
+                in_str = [self.train_set.in_vocabulary(s) for s in data["in"].transpose(0, 1).tolist()]
+                out_str = [self.train_set.out_vocabulary(s) for s in data["out"].transpose(0, 1).tolist()]
+            else:
+                in_str = [self.train_set._cache.in_vocabulary(s) for s in data["in"].transpose(0, 1).tolist()]
+                out_str = [self.train_set._cache.out_vocabulary(s) for s in data["out"].transpose(0, 1).tolist()]
+                
 
             in_str: List[str] = [" ".join(s[:int(slen)]) for s, slen in zip(in_str, data["in_len"].tolist())]
             out_str: List[str] = [" ".join(s[:int(slen)]) for s, slen in zip(out_str, data["out_len"].tolist())]
@@ -333,7 +356,7 @@ class Task:
     def save_scores(self, res: EncoderDecoderResult, bleus: List[float], step_idx: int, out_str: List[str], epoch: int, store_path: str="scores"):
         file_types = ["chia", "ppl", "idx", "bleu"]
 
-        store_dir_path = os.path.join(store_path, self.dataset_name)
+        store_dir_path = os.path.join(store_path, self.task_name)
         os.makedirs(store_dir_path, exist_ok=True)
         
         for ftype in file_types:
@@ -358,27 +381,26 @@ class Task:
         return idx_to_sentences
 
 
-    def save_idx_to_sentences(self, idx_to_sentences: Dict[int, Dict[str, str]], store_path: str="scores"):
-        store_dir_path = os.path.join(store_path, self.dataset_name)
+    def save_idx_to_sentences(self, idx_to_sentences: Dict[int, Dict[str, str]], store_path: str="scores", add_arg=""):
+        store_dir_path = os.path.join(store_path, self.task_name)
         os.makedirs(store_dir_path, exist_ok=True)
-        file_name = os.path.join(store_dir_path, "idx_to_sentences.pickle")
+        file_name = os.path.join(store_dir_path, f"idx_to_sentences{add_arg}.pickle")
 
         with open(file_name, 'wb') as handle:
             pickle.dump(idx_to_sentences, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
     def report_bleu(self, res: EncoderDecoderResult, out_str: List[str]) -> List[float]:
-        #print(f"res.outputs.shape: {res.outputs.shape}")
         pred_seq = torch.argmax(res.outputs, -1)
-        #print(f"pred_seq.shape: {pred_seq.shape}")
 
-        pred_seq = [self.train_set._cache.out_vocabulary(s) for s in pred_seq.transpose(0, 1).tolist()]
+        if "cogs" in self.helper.args.task:
+            pred_seq = [self.train_set.out_vocabulary(s) for s in pred_seq.transpose(0, 1).tolist()]
+        else:
+            pred_seq = [self.train_set._cache.out_vocabulary(s) for s in pred_seq.transpose(0, 1).tolist()]
+
         pred_str: List[str] = [" ".join(s[:int(slen)]) for s, slen in zip(pred_seq, res.out_lengths.tolist())]
 
-        #print(f"pred_str[0], pred_str[-1]: {pred_str[0], pred_str[-1]}")
-
         bleus = evaluate_bleu(pred_str, out_str)
-        #print(f"sum(bleus), len(bleus): {sum(bleus), len(bleus)}")
         return bleus
 
 
@@ -388,7 +410,6 @@ class Task:
         epoch = 0
         epoch_loss, step_count = 0, 0
         batch_count = math.ceil(len(self.train_set) / self.helper.args.batch_size)
-        #print(f"Train set length, State size, Batch count: {len(self.train_set), self.helper.args.batch_size, batch_count}")
 
         self.data_iter = iter(self.train_loader)
 
@@ -403,22 +424,20 @@ class Task:
                 epoch += 1
                 pbar.set_description(f"Training: Epoch {epoch}")
 
-
-            # print(f"step_idx: {step_idx}", flush=True)
             self.load_time_meter.stop()
 
             res, plots, in_str, out_str = self.train_step()
 
             plots.update(self.plot(res))
 
-            bleus = self.report_bleu(res, out_str)
-
-            self.save_scores(res, bleus, step_idx, out_str, epoch)
+            if not self.subset_training:
+                bleus = self.report_bleu(res, out_str)
+                self.save_scores(res, bleus, step_idx, out_str, epoch)
 
             epoch_loss += res.loss
             step_count += 1
 
-            if epoch == 1:
+            if epoch <= 2 and not self.subset_training:
                 self.update_data_indices(idx_to_sentences, res, in_str, out_str)
 
             with self.plot_time_meter:
@@ -428,7 +447,8 @@ class Task:
 
             self.helper.tick()
 
-        self.save_idx_to_sentences(idx_to_sentences)
+        if not self.subset_training:
+            self.save_idx_to_sentences(idx_to_sentences)
 
     @property
     def test_batch_size(self):

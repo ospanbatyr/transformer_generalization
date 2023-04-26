@@ -8,7 +8,7 @@ def evaluate_bleu(ref: List[str], hyp: List[str], script='default') -> List[floa
         ref_i = [[ref[i].split()]]
         hyp_i = [hyp[i].split()]
 
-        metrics = compute_bleu(ref_i, hyp_i, max_order=min(len(hyp[i].split()), 3), smooth=True)
+        metrics = compute_bleu(ref_i, hyp_i, max_order=3, smooth=True)
 
         if script == 'nltk':
             metrics = corpus_bleu(refsend, gensend)
