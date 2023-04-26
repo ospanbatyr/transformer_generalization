@@ -5,7 +5,7 @@ from .transformer_mixin import TransformerMixin
 
 
 class PCFGTransformer(TransformerMixin, Task):
-    VALID_NUM_WORKERS = 0
+    VALID_NUM_WORKERS = 2
     MAX_LENGHT_PER_BATCH = 200
 
     def create_datasets(self):

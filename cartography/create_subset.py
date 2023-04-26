@@ -17,9 +17,9 @@ def read_pickle(file_path: str) -> Any:
 		return pickle.load(handle)
 
 
-def get_scores(dir_path: str, plot_path: str, converge_epoch: int) -> Dict[int, Dict[str, List[float]]]:
+def get_scores(dir_path: str, converge_epoch: int) -> Tuple[Dict[int, Dict[str, List[float]]], Dict[str, List[Any]]]:
 	file_list = os.listdir(dir_path)
-	# TODO BLOCKED FOR COGS! - idx_to_sentences: Dict[int, Dict[str, str]] = read_pickle(os.path.join(dir_path, "idx_to_sentences.pickle"))
+	idx_to_sentences: Dict[int, Dict[str, str]] = read_pickle(os.path.join(dir_path, "idx_to_sentences.pickle"))
 
 	file_list = [f for f in file_list if f[:5] == "epoch"]
 	file_list = [f for f in file_list if int(f.split("_")[0].replace("epoch", "")) > 3 and int(f.split("_")[0].replace("epoch", "")) < converge_epoch]
@@ -29,7 +29,7 @@ def get_scores(dir_path: str, plot_path: str, converge_epoch: int) -> Dict[int, 
 	idxs, ppls, chias, bleus = [], [], [], []
 	for file_name in file_list:
 		file_path = f"{dir_path}/{file_name}"
-		print(file_name)
+		# print(file_name)
 		if "ppl" in file_path:
 			ppls.extend(read_pickle(file_path).tolist())
 		elif "chia" in file_path:
@@ -53,10 +53,16 @@ def get_scores(dir_path: str, plot_path: str, converge_epoch: int) -> Dict[int, 
 			idx_dict[item[0]]["chia"].append(item[2])
 			idx_dict[item[0]]["bleu"].append(item[3])
 
-	return idx_dict
+	i2s = {"Index": [], "In": [], "Out": []}
+	for k, v in idx_to_sentences.items():
+		i2s["Index"].append(k)
+		i2s["In"].append(v["in"])
+		i2s["Out"].append(v["out"])
+
+	return idx_dict, i2s
 
 
-def calculate_statistics(epoch: int, idx_dict: Dict[int, Dict[str, List[float]]]) -> pd.DataFrame:
+def calculate_statistics(epoch: int, idx_dict: Dict[int, Dict[str, List[float]]], i2s: Dict[str, List[Any]]) -> pd.DataFrame:
 	idx_mean_var_dict: Dict[int, Dict[str, Tuple[float, float]]] = {}
 	idx_mean_var_list: List[Tuple[int, float, float, float, float, float, float, float, float]] = []
 	score_names = ["inv_ppl", "neg_ppl", "chia", "bleu"]
@@ -70,12 +76,22 @@ def calculate_statistics(epoch: int, idx_dict: Dict[int, Dict[str, List[float]]]
 		
 		idx_mean_var_list.append(tuple((idx, *scores_list)))
 
+	i2s_df = pd.DataFrame.from_dict(i2s)
+
+	print(f"i2s_df.head()")
+	print(i2s_df.head())
+
 	df = pd.DataFrame(idx_mean_var_list, columns =['Index', 'Confidence - Inverse PPL', 'Variability - Inverse PPL', \
 													'Confidence - Neg PPL', 'Variability - Neg PPL', \
 													'Confidence - CHIA', 'Variability - CHIA', \
 													'Confidence - BLEU', 'Variability - BLEU'])
 
-	return df
+	print(f"df.head()")
+	print(df.head())
+
+	cartography = pd.merge(df, i2s_df, on="Index")
+
+	return cartography
 
 
 def load_scores(dir_path: str, plot_path: str, converge_epoch: int) -> None:
@@ -90,36 +106,38 @@ def load_scores(dir_path: str, plot_path: str, converge_epoch: int) -> None:
 			plot(df, plot_path, str(epoch), plot_type)
 
 
-def plot(df, path_name, extra_path_info, plot_type="inv_ppl"):
-	if plot_type == "inv_ppl":
-		fig = px.scatter(df, x="Variability - Inverse PPL", y="Confidence - Inverse PPL", color='Confidence - BLEU', range_color=[0,1])
-		fig.update_layout(yaxis_range=[0, 1])
-	elif plot_type == "neg_ppl":
-		fig = px.scatter(df, x="Variability - Neg PPL", y="Confidence - Neg PPL", color='Confidence - BLEU', range_color=[0,1])
-		fig.update_layout(yaxis_range=[0, 1])
-	elif plot_type == "chia":
-		fig = px.scatter(df, x="Variability - CHIA", y="Confidence - CHIA", color='Confidence - BLEU', range_color=[0,1])
-		fig.update_layout(yaxis_range=[0, 1])
-	elif plot_type == "bleu":
-		fig = px.scatter(df, x="Variability - BLEU", y="Confidence - BLEU", color='Confidence - BLEU', range_color=[0,1])
-		fig.update_layout(yaxis_range=[0, 1])
-	
-	fig.update_traces(marker=dict(size=2), selector=dict(mode='markers'))
-	fig.write_image(f"{path_name}/cartography_plot_{plot_type}_{extra_path_info}.png", scale=5)
+def choose_subsets(df: pd.DataFrame, criteria: str, ratio:float = 0.33) -> None:
+	assert criteria in ["Inverse PPL", "Neg PPL", "CHIA", "BLEU"]
+	sorted_df = df.sort_values(by=[f'Variability - {criteria}'], ascending=False)
+	sorted_df = sorted_df.reset_index(drop=True)
+	subset_df = sorted_df.iloc[:int(len(df)*ratio),:]
+	return subset_df
 
 
 def main():
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('-outputs_path', required=True, type=str)
-	parser.add_argument('-plot_path', required=True, type=str)
 	parser.add_argument('-converge_epoch', required=True, type=str)
 	args = parser.parse_args()
 	outputs_path = args.outputs_path
-	plot_path = args.plot_path
 	converge_epoch = int(args.converge_epoch)
-	df = load_scores(outputs_path, plot_path, converge_epoch)
+	idx_dict, i2s = get_scores(outputs_path, converge_epoch)
+	df = calculate_statistics(converge_epoch // 2, idx_dict, i2s)
+	
+	for ratio in [0.25, 0.33, 0.5]:
+		print(f"Ratio: {ratio}")
+		inv_ppl_df = choose_subsets(df, "Inverse PPL", ratio=ratio)
+		chia_df = choose_subsets(df, "CHIA", ratio=ratio)
+		print(f"len(inv_ppl_df), len(chia_df): {len(inv_ppl_df), len(chia_df)}")
+
+		int_df = pd.merge(inv_ppl_df, chia_df, how='inner', on=['Index'])
+		print(f"len(int_df): {len(int_df)}")
+		print(f"Intersection Score: {(len(int_df) / len(inv_ppl_df)):.3f}")
+		print()
+
 
 if __name__ == "__main__":
 	main()
 	print("Done!")
+

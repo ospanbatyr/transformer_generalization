@@ -10,41 +10,23 @@ metric:
   goal: maximize
 parameters:
   name:
-    value: trafo_scan_length_cutoff
+    value: trafo_scan_length
   log:
     value: wandb
   profile:
     value: trafo_scan
+  scan.train_split:
+    value: length
   stop_after:
     value: 50000
-  scan.length_cutoff:
-    values:
-      - 22
-      - 24
-      - 25
-      - 26
-      - 27
-      - 28
-      - 30  
-      - 32
-      - 33
-      - 36
-      - 40
   transformer.variant:
     values:
       - noscale
-      - universal_noscale
-      - relative
-      - relative_universal
-      - scaledinit
-      - universal_scaledinit
+  seed:
+    value: 123
   task:
-    value: scan_resplit_transformer
+    value: trafo_scan
   sweep_id_for_grid_search:
     distribution: categorical
     values:
       - 1
-      - 2
-      - 3
-      - 4
-      - 5
