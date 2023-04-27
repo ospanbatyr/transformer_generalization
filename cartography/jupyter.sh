@@ -30,10 +30,8 @@
 #SBATCH --job-name=JupiterNotebook
 #SBATCH --nodes 1
 #SBATCH --ntasks-per-node=1
-#SBATCH --partition=ai
-#SBATCH --account=ai
-#SBATCH --qos=ai
-#SBATCH --time=12:00:00
+#SBATCH --partition=short
+#SBATCH --time=2:00:00
 #SBATCH --output=jupyter-%J.log
 
 # Please read before you run: http://login.kuacc.ku.edu.tr/#h.3qapvarv2g49

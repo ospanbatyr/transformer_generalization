@@ -43,7 +43,7 @@ class TransformerEncDecInterface(ModelInterface):
     def decode_outputs(self, outputs: EncoderDecoderResult) -> Tuple[torch.Tensor, torch.Tensor]:
         return outputs.outputs, outputs.out_lengths
 
-    def __call__(self, data: Dict[str, torch.Tensor], train_eos: bool = True) -> EncoderDecoderResult:
+    def __call__(self, data: Dict[str, torch.Tensor], train_eos: bool = True, teacher_forcing: bool = True) -> EncoderDecoderResult:
         in_len = data["in_len"].long()
         out_len = data["out_len"].long()
         idx = data["idx"].cpu()
@@ -55,8 +55,10 @@ class TransformerEncDecInterface(ModelInterface):
         in_len += 1
         out_len += 1
 
+        teacher_forcing = teacher_forcing and self.model.training # clearer
+
         res = self.model(in_with_eos.transpose(0, 1), in_len, out_with_eos.transpose(0, 1),
-                         out_len, teacher_forcing=self.model.training, max_len=out_len.max().item())
+                         out_len, teacher_forcing=teacher_forcing, max_len=out_len.max().item())
 
         # This __call__ is for each decoding step, so with EncoderDecoderResult.merge they are merged
         res.data = res.data.transpose(0, 1)

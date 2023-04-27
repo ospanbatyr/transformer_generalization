@@ -269,8 +269,9 @@ class Task:
     def get_train_batch(self) -> Dict[str, Any]:
         return next(self.data_iter)
 
-    def run_model(self, data: torch.Tensor) -> Tuple[Result, Dict[str, Any]]:
-        res = self.model_interface(data)
+    def run_model(self, data: torch.Tensor, greedy=False) -> Tuple[Result, Dict[str, Any]]:
+        teacher_forcing = not greedy
+        res = self.model_interface(data, teacher_forcing=teacher_forcing)
         return res, {}
 
     def chunk_batch_dim(self, data: Dict[str, Any], n: int) -> List[Dict[str, Any]]:
@@ -314,6 +315,7 @@ class Task:
 
             n_chunks = self.get_n_chunks(data)
             res_list = []
+            res_greedy_list = []
             weights = []
 
             # print(f'data["in"].shape, data["out"].shape: {data["in"].shape, data["out"].shape}')
@@ -337,6 +339,14 @@ class Task:
                     res, custom_plots = self.run_model(d)
                     res_list.append(res)
                     plots.update(custom_plots)
+
+                    with torch.no_grad:
+                        model.eval()
+                        res_greedy, _ = self.run_model(d, greedy=True)
+                        model.train()
+
+                    res_greedy_list.append(res_greedy)
+                    
                 weights.append((d["out_len"].sum() / total_out_len) if "out_len" in d else 1)
                 assert torch.isfinite(res_list[-1].loss)
                 self.scaler.scale(res_list[-1].loss * weights[-1]).backward()
@@ -349,8 +359,9 @@ class Task:
 
             self.helper.state.iter += 1
             res = res_list[0].__class__.merge(res_list, weights)
+            res_greedy = res_greedy_list[0].__class__.merge(res_greedy_list, weights)
 
-        return res, plots, in_str, out_str
+        return res, res_greedy, plots, in_str, out_str
 
 
     def save_scores(self, res: EncoderDecoderResult, bleus: List[float], step_idx: int, out_str: List[str], epoch: int, store_path: str="scores"):
@@ -426,12 +437,12 @@ class Task:
 
             self.load_time_meter.stop()
 
-            res, plots, in_str, out_str = self.train_step()
+            res, res_greedy, plots, in_str, out_str = self.train_step()
 
             plots.update(self.plot(res))
 
             if not self.subset_training:
-                bleus = self.report_bleu(res, out_str)
+                bleus = self.report_bleu(res_greedy_list, out_str)
                 self.save_scores(res, bleus, step_idx, out_str, epoch)
 
             epoch_loss += res.loss

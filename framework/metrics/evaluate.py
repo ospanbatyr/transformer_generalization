@@ -1,20 +1,14 @@
 from .bleu import compute_bleu
 from typing import List
+from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu
 
-def evaluate_bleu(ref: List[str], hyp: List[str], script='default') -> List[float]:
-    all_metrics = []
+def evaluate_bleu(ref: List[str], hyp: List[str]) -> List[float]:
     bleus = []
     for i in range(len(ref)):
-        ref_i = [[ref[i].split()]]
-        hyp_i = [hyp[i].split()]
-
-        metrics = compute_bleu(ref_i, hyp_i, max_order=3, smooth=True)
-
-        if script == 'nltk':
-            metrics = corpus_bleu(refsend, gensend)
-            return [metrics]
-
-        all_metrics.append(metrics)
-        bleus.append(metrics[0])
+        ref_i = [ref[i].split()]
+        hyp_i = hyp[i].split()
+        
+        metrics = sentence_bleu(ref_i, hyp_i, smoothing_function=SmoothingFunction().method4, auto_reweigh=True)
+        bleus.append(metrics)
 
     return bleus
