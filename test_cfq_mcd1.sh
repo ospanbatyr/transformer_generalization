@@ -33,7 +33,11 @@
 #SBATCH --account=ai
 #SBATCH --qos=ai
 #SBATCH --mem=24G
+<<<<<<< HEAD
 #SBATCH --gres=gpu:tesla_t4:1
+=======
+#SBATCH --gres=gpu:tesla_v100:1
+>>>>>>> 96a779b68294827f1dc50b1da1401994b14a83ab
 #SBATCH --time=1-00:00:00
 #SBATCH --output=slurm_logs/cfq_s2s-%J.log
 
