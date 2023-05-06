@@ -166,8 +166,11 @@ class TrainingHelper:
         self.create_dirs()
         self.save_startup_log()
         self.start_tensorboard()
+        
         self.saver = Saver(self.dirs.checkpoint, self.args.save_interval,
-                           keep_every_n_hours=None if self.use_wandb else 4)
+                           keep_every_n_hours=None if self.use_wandb else 4,
+                           keep_last = 0x7fffffff if self.args.indices_path is None else 1)
+                        
         self.saver["state"] = self.state
         self.saver["run_invariants"] = deepcopy(self.run_invariants)
         self.setup_environment()

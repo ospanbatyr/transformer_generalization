@@ -52,7 +52,7 @@ def register_args(parser: framework.helpers.ArgumentParser):
             "transformer.encoder_n_layers": 2,
             "transformer.decoder_n_layers": 2,
             "grad_clip": 1,
-            "stop_after": 60000, # TODO 50000,
+            "stop_after": 50000, # TODO 50000,
             "dropout": 0.1,
             "batch_size": 512,
             "lr": 1e-4

@@ -33,11 +33,11 @@ parameters:
   test_batch_size:
     value: 256
   stop_after:
-    value: 1000
+    value: 15000
   seed:
-    value: 123
+    value: 42
   indices_path:
-    value: cartography/subsets/cogs/inv_ppl_ambiguous_10.pickle
+    value: cartography/subsets/cogs/inv_ppl_ambiguous_16_0.5.pickle
   sweep_id_for_grid_search:
     distribution: categorical
     values:

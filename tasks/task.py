@@ -12,6 +12,8 @@ import pickle
 import os
 from dataclasses import dataclass
 import math
+import random
+import numpy as np
 from framework.metrics.evaluate import evaluate_bleu
 
 
@@ -340,10 +342,10 @@ class Task:
                     res_list.append(res)
                     plots.update(custom_plots)
 
-                    with torch.no_grad:
-                        model.eval()
+                    with torch.no_grad():
+                        self.model.eval()
                         res_greedy, _ = self.run_model(d, greedy=True)
-                        model.train()
+                        self.model.train()
 
                     res_greedy_list.append(res_greedy)
                     
@@ -401,7 +403,7 @@ class Task:
             pickle.dump(idx_to_sentences, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-    def report_bleu(self, res: EncoderDecoderResult, out_str: List[str]) -> List[float]:
+    def report_bleu(self, res: EncoderDecoderResult, out_str: List[str], verbose=False) -> List[float]:
         pred_seq = torch.argmax(res.outputs, -1)
 
         if "cogs" in self.helper.args.task:
@@ -412,6 +414,17 @@ class Task:
         pred_str: List[str] = [" ".join(s[:int(slen)]) for s, slen in zip(pred_seq, res.out_lengths.tolist())]
 
         bleus = evaluate_bleu(pred_str, out_str)
+
+        if verbose:
+            print("\n\n==========================================================================\n")
+            for pred_s, out_s, bleu in zip(pred_str, out_str, bleus):
+                print("Prediction: ", pred_s)
+                print("Target: ", out_s)
+                print("BLEU: ", bleu)
+                print()
+            print("\n==========================================================================\n\n")
+            print(f"bleus: {np.mean(bleus)}")
+
         return bleus
 
 
@@ -442,7 +455,8 @@ class Task:
             plots.update(self.plot(res))
 
             if not self.subset_training:
-                bleus = self.report_bleu(res_greedy_list, out_str)
+                verbose = (step_idx % batch_count) == 0 and (step_idx // batch_count) < 10 
+                bleus = self.report_bleu(res_greedy, out_str, verbose=verbose)
                 self.save_scores(res, bleus, step_idx, out_str, epoch)
 
             epoch_loss += res.loss

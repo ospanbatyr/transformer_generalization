@@ -35,7 +35,7 @@ parameters:
   stop_after:
     value: 15000
   seed:
-    value: 123
+    value: 42
   indices_path:
     value: cartography/subsets/cogs/inv_ppl_easy_to_learn_10.pickle
   sweep_id_for_grid_search:

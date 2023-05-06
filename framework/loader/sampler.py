@@ -61,7 +61,8 @@ class InfiniteSampler(torch.utils.data.Sampler):
                             sample = i_list[pos]
                             pos += 1
 
-                assert sample in self.indices, "Sample is not in indices"
+                    assert sample in self.indices, f"Sample is not in indices: {sample}"
+                    
                 yield sample
 
     def __len__(self):

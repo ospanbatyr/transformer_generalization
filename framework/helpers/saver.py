@@ -65,6 +65,13 @@ class Saver:
         self.keep_last = keep_last
         self._keep_every_n_seconds = keep_every_n_hours * 3600 if keep_every_n_hours else None
 
+        print(f"Saver initialization")
+        print(f"   short_interval: {short_interval}")
+        print(f"   keep_every_n_hours: {keep_every_n_hours}")
+        print(f"   keep_last: {keep_last}")
+        print(f"   dir: {dir}")
+        print(f"   _keep_every_n_seconds: {self._keep_every_n_seconds}")
+
     def register(self, name: str, saver, replace: bool = False):
         if not replace:
             assert name not in self.savers, "Saver %s already registered" % name

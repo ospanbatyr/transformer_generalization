@@ -67,7 +67,7 @@ echo
 ################################################################################
 
 # ambiguous - 0.5 ratio
-wandb agent osmanbatur/transformer_generalization/d48kdq61
+wandb agent osmanbatur/transformer_generalization/xduninn7
 
 # DON'T USE ADDRESS BELOW. 
 # DO USE TOKEN BELOW
