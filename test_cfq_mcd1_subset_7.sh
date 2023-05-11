@@ -67,7 +67,7 @@ echo
 ################################################################################
 
 # random - 0.5 ratio
-wandb agent osmanbatur/transformer_generalization/fuun21jm
+wandb agent osmanbatur/transformer_generalization/k4lvsxp1
 
 # DON'T USE ADDRESS BELOW. 
 # DO USE TOKEN BELOW

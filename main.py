@@ -41,6 +41,8 @@ def register_args(parser: framework.helpers.ArgumentParser):
     parser.add_argument("-max_length_per_batch", default="none", parser=parser.int_or_none_parser)
     parser.add_argument("-log_sample_level_loss", default=False)
     parser.add_argument("-indices_path", default="none", parser=parser.str_or_none_parser)
+    parser.add_argument("-finetune_sweep_name", default="none", parser=parser.str_or_none_parser)
+    parser.add_argument("-finetune_steps", default="none", parser=parser.int_or_none_parser)
 
     parser.add_profile([
         parser.Profile("cfq_trafo", {
@@ -52,7 +54,7 @@ def register_args(parser: framework.helpers.ArgumentParser):
             "transformer.encoder_n_layers": 2,
             "transformer.decoder_n_layers": 2,
             "grad_clip": 1,
-            "stop_after": 50000, # TODO 50000,
+            "stop_after": 40000, # TODO 50000,
             "dropout": 0.1,
             "batch_size": 512,
             "lr": 1e-4
