@@ -125,10 +125,21 @@ class Task:
 
     def create_train_loader(self, loader: torch.utils.data.Dataset, seed: Optional[int] = None) \
                             -> torch.utils.data.DataLoader:
+        
+        if self.indices_path is not None:
+            # create training curriculum
+            curriculum = framework.loader.sampler.Curriculum(
+                starting_percent=self.helper.args.starting_percent,
+                increase_scale=self.helper.args.increase_scale,
+                total_steps=self.helper.args.stop_after,
+                batch_size=self.helper.args.batch_size
+            )
+        else:
+            curriculum = None
 
         return torch.utils.data.DataLoader(loader, batch_size=self.helper.args.batch_size,
                                            sampler=framework.loader.sampler.InfiniteSampler(
-                                               loader, seed=seed, indices_path=self.indices_path),
+                                               loader, seed=seed, indices_path=self.indices_path, curriculum=curriculum),
                                            collate_fn=framework.loader.collate.VarLengthCollate(
                                                batch_dim=self.batch_dim),
                                            num_workers=self.TRAIN_NUM_WORKERS, pin_memory=True)
@@ -436,6 +447,8 @@ class Task:
         batch_count = math.ceil(len(self.train_set) / self.helper.args.batch_size)
 
         self.data_iter = iter(self.train_loader)
+        
+        self.train_loader.sampler.curriculum.reset()
 
         idx_to_sentences: Dict[int, Dict[str, str]] = {} # idx -> {"in": "Who is ..?", "out": "SELECT DISTINCT .."}
 

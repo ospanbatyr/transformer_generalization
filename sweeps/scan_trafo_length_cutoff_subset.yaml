@@ -25,7 +25,7 @@ parameters:
   indices_path:
     value: cartography/subsets/scan_length/inv_ppl_easy_to_learn_30.pickle
   seed:
-    value: 123
+    value: 42
   task:
     value: trafo_scan
   sweep_id_for_grid_search:
