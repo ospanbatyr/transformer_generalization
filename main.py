@@ -41,8 +41,8 @@ def register_args(parser: framework.helpers.ArgumentParser):
     parser.add_argument("-max_length_per_batch", default="none", parser=parser.int_or_none_parser)
     parser.add_argument("-log_sample_level_loss", default=False)
     parser.add_argument("-indices_path", default="none", parser=parser.str_or_none_parser)
-    parser.add_argument("-starting_percent", default=0.04)
-    parser.add_argument("-increase_scale", default=1.9)
+    parser.add_argument("-bin_count", type=int, default=10)
+    parser.add_argument("-full_when", type=float, default=0.5)
 
     parser.add_profile([
         parser.Profile("cfq_trafo", {

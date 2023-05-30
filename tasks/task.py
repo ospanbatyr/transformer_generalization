@@ -110,7 +110,6 @@ class Task:
 
         assert False, "Wrong dataset name or task definition"
 
-
     def subset_training(self) -> bool:
         return self.helper.args.indices_path is not None
 
@@ -129,17 +128,18 @@ class Task:
         if self.indices_path is not None:
             # create training curriculum
             curriculum = framework.loader.sampler.Curriculum(
-                starting_percent=self.helper.args.starting_percent,
-                increase_scale=self.helper.args.increase_scale,
+                dataset_size=len(loader),
+                batch_size=self.helper.args.batch_size,
                 total_steps=self.helper.args.stop_after,
-                batch_size=self.helper.args.batch_size
+                bin_count=self.helper.args.bin_count
             )
         else:
             curriculum = None
 
         return torch.utils.data.DataLoader(loader, batch_size=self.helper.args.batch_size,
                                            sampler=framework.loader.sampler.InfiniteSampler(
-                                               loader, seed=seed, indices_path=self.indices_path, curriculum=curriculum),
+                                               loader, self.helper.args.batch_size, seed=seed, 
+                                               indices_path=self.indices_path, curriculum=curriculum),
                                            collate_fn=framework.loader.collate.VarLengthCollate(
                                                batch_dim=self.batch_dim),
                                            num_workers=self.TRAIN_NUM_WORKERS, pin_memory=True)

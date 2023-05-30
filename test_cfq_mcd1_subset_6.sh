@@ -67,7 +67,7 @@ echo
 ################################################################################
 
 # hard to learn - 0.5 ratio
-wandb agent osmanbatur/transformer_generalization/d4mpdhi4
+wandb agent osmanbatur/transformer_generalization/lt3s76zi
 
 # DON'T USE ADDRESS BELOW. 
 # DO USE TOKEN BELOW
