@@ -67,7 +67,7 @@ echo
 ################################################################################
 ##################### !!! DO NOT EDIT ABOVE THIS LINE !!! ######################
 ################################################################################
-wandb agent osmanbatur/transformer_generalization/buy69mrl
+wandb agent osmanbatur/transformer_generalization/jzrq7e8c
 
 # DON'T USE ADDRESS BELOW. 
 # DO USE TOKEN BELOW

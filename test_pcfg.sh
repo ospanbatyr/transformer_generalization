@@ -34,7 +34,7 @@
 #SBATCH --qos=ai
 #SBATCH --mem=24G
 #SBATCH --gres=gpu:tesla_v100:1
-#SBATCH --time=1-12:00:00
+#SBATCH --time=2-00:00:00
 #SBATCH --output=slurm_logs/pcfg_s2s-%J.log
 
 

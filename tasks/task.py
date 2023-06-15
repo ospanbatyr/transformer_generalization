@@ -369,7 +369,7 @@ class Task:
     def save_scores(self, res: EncoderDecoderResult, bleus: List[float], step_idx: int, out_str: List[str], epoch: int, store_path: str="scores"):
         file_types = ["chia", "ppl", "idx", "bleu"]
 
-        store_dir_path = os.path.join(store_path, self.task_name)
+        store_dir_path = os.path.join(store_path, str(self.helper.args.seed), self.task_name)
         os.makedirs(store_dir_path, exist_ok=True)
         
         for ftype in file_types:
@@ -395,7 +395,7 @@ class Task:
 
 
     def save_idx_to_sentences(self, idx_to_sentences: Dict[int, Dict[str, str]], store_path: str="scores", add_arg=""):
-        store_dir_path = os.path.join(store_path, self.task_name)
+        store_dir_path = os.path.join(store_path, str(self.helper.args.seed), self.task_name)
         os.makedirs(store_dir_path, exist_ok=True)
         file_name = os.path.join(store_dir_path, f"idx_to_sentences{add_arg}.pickle")
 

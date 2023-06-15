@@ -7,3 +7,4 @@ slurm_logs/
 scores/
 cartography/*.log
 cartography/.ipynb_checkpoints/
+cartography/plots/

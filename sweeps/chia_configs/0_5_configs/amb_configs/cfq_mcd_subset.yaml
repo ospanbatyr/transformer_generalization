@@ -30,7 +30,7 @@ parameters:
   batch_size:
     value: 1024
   indices_path:
-    value: cartography/subsets/cfq/chia_ambiguous_20_0.5.pickle
+    value: cartography/subsets/42/cfq/chia_ambiguous_20_0.5.pickle
   seed:
     value: 42
   sweep_id_for_grid_search:
