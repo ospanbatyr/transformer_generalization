@@ -37,7 +37,7 @@ parameters:
   seed:
     value: 42
   indices_path:
-    value: cartography/subsets/curriculum/cogs/bleu_hard_to_learn_10.pickle
+    value: cartography/subsets/curriculum/42/cogs/bleu_hard_to_learn_10.pickle
   sweep_id_for_grid_search:
     distribution: categorical
     values:
