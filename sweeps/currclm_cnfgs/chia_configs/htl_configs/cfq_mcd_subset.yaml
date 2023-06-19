@@ -30,7 +30,7 @@ parameters:
   batch_size:
     value: 1024
   indices_path:
-    value: cartography/subsets/curriculum/cfq/chia_hard_to_learn_20.pickle
+    value: cartography/subsets/curriculum/42/cfq/chia_hard_to_learn_20.pickle
   seed:
     value: 42
   sweep_id_for_grid_search:
