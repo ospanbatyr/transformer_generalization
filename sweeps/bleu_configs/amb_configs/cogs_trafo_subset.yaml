@@ -35,7 +35,7 @@ parameters:
   stop_after:
     value: 15000
   seed:
-    value: 42
+    value: 0
   indices_path:
     value: cartography/subsets/42/cogs/bleu_ambiguous_10_0.33.pickle
   sweep_id_for_grid_search:

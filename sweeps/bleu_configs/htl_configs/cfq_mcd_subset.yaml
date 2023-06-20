@@ -30,9 +30,9 @@ parameters:
   batch_size:
     value: 1024
   indices_path:
-    value: cartography/subsets/42//cfq/bleu_hard_to_learn_20_0.33.pickle
+    value: cartography/subsets/0/cfq/bleu_hard_to_learn_20_0.33.pickle
   seed:
-    value: 123
+    value: 0
   sweep_id_for_grid_search:
     distribution: categorical
     values:

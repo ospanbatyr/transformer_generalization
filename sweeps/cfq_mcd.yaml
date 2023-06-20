@@ -30,7 +30,7 @@ parameters:
   batch_size:
     value: 1024
   seed:
-    value: 42
+    value: 0
   sweep_id_for_grid_search:
     distribution: categorical
     values:

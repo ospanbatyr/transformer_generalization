@@ -30,9 +30,9 @@ parameters:
   batch_size:
     value: 1024
   indices_path:
-    value: cartography/subsets/cfq/inv_ppl_random_20.pickle
+    value: cartography/subsets/0/cfq/inv_ppl_random_20_0.33.pickle
   seed:
-    value: 42
+    value: 0
   sweep_id_for_grid_search:
     distribution: categorical
     values:

@@ -23,7 +23,7 @@ parameters:
     values:
       - noscale
   seed:
-    value: 123
+    value: 0
   task:
     value: trafo_scan
   sweep_id_for_grid_search:
