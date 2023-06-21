@@ -177,7 +177,7 @@ class Task:
             loss_sum = 0
 
             test = set.start_test()
-            for d in tqdm(loader, "validation"):
+            for d in loader: # for d in tqdm(loader, "validation"):
                 d = self.prepare_data(d)
                 res = self.model_interface(d)
                 digits = self.model_interface.decode_outputs(res)
@@ -435,11 +435,11 @@ class Task:
         epoch_loss, step_count = 0, 0
         batch_count = math.ceil(len(self.train_set) / self.helper.args.batch_size)
 
-        self.data_iter = iter(self.train_loader)
+        # self.data_iter = iter(self.train_loader)
 
         idx_to_sentences: Dict[int, Dict[str, str]] = {} # idx -> {"in": "Who is ..?", "out": "SELECT DISTINCT .."}
 
-        pbar = tqdm(range(self.helper.args.stop_after or 10e10))
+        pbar = tqdm(range(self.helper.args.stop_after or 0))
         for step_idx in pbar:
             if step_idx % batch_count == 0:
                 if step_idx != 0:

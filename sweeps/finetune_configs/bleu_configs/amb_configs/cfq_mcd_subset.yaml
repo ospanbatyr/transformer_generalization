@@ -36,7 +36,7 @@ parameters:
   finetune_sweep_name:
     value: jcz7h05v
   finetune_steps:
-    value: 10000
+    value: 0
   sweep_id_for_grid_search:
     distribution: categorical
     values:

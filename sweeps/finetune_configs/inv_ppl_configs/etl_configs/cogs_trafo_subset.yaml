@@ -33,13 +33,13 @@ parameters:
   test_batch_size:
     value: 256
   stop_after:
-    value: 10000
+    value: 0
   seed:
     value: 42
   finetune_sweep_name:
     value: na8tgeof
   finetune_steps:
-    value: 5000
+    value: 0
   indices_path:
     value: cartography/subsets/cogs/inv_ppl_easy_to_learn_16_0.5.pickle
   sweep_id_for_grid_search:

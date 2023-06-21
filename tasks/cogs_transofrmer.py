@@ -23,6 +23,7 @@ class COGSTransformer(TransformerMixin, Task):
         self.slow_valid_loader = self.create_valid_loader(self.slow_valid_set)
 
     def do_generalization_test(self) -> Dict[str, Any]:
+        print(f"VALIDATING ON GENERALIZATION")
         d = {}
         test, loss = self.validate_on(self.slow_valid_set, self.slow_valid_loader)
 
@@ -40,6 +41,6 @@ class COGSTransformer(TransformerMixin, Task):
 
     def train(self):
         super().train()
-        if self.helper.state.iter % self.helper.args.cogs.generalization_test_interval != 0:
-            # Redo the test, but only if it was not already done
-            self.helper.summary.log(self.do_generalization_test())
+        #if self.helper.state.iter % self.helper.args.cogs.generalization_test_interval != 0:
+        #    # Redo the test, but only if it was not already done
+        self.helper.summary.log(self.do_generalization_test())

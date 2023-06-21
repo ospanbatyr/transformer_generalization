@@ -61,7 +61,7 @@ class SequenceTestState:
 class TextSequenceTestState(SequenceTestState):
     def __init__(self, input_to_text: Callable[[torch.Tensor], torch.Tensor],
                  output_to_text: Callable[[torch.Tensor], torch.Tensor], batch_dim: int = 1,
-                 max_bad_samples: int = 100, min_prefix_match_len: int = 1, eos_id: int = -1):
+                 max_bad_samples: int = 21010, min_prefix_match_len: int = 1, eos_id: int = -1):
         super().__init__(batch_dim)
         self.bad_sequences = []
         self.max_bad_samples = max_bad_samples
@@ -122,13 +122,16 @@ class TextSequenceTestState(SequenceTestState):
         prefix_len = torch.minimum(prefix_len.clamp(min=self.min_prefix_match_len), data["out_len"])
         prefix_ok_mask = self.compare_direct((net_out[0], prefix_len), data["out"], prefix_len)
 
-        if len(self.bad_sequences) < self.max_bad_samples:
-            t = torch.nonzero(~ok_mask).squeeze(-1)[:self.max_bad_samples - len(self.bad_sequences)]
+        
+        t = torch.nonzero(~ok_mask).squeeze(-1)
 
-            for i in t:
-                t_in, t_ref, t_out = self.sample_to_text(net_out, data, i)
-                s = [t_in, t_ref, t_out, str(prefix_ok_mask[i].item())]
+        for i in t:
+            t_in, t_ref, t_out = self.sample_to_text(net_out, data, i)
+            print(f"In:\t{t_in}\tOut:\t{t_out}\tRef:\t{t_ref}")
 
+            s = [t_in, t_ref, t_out, str(prefix_ok_mask[i].item())]
+
+            if len(self.bad_sequences) < self.max_bad_samples:
                 if self.oracle_available:
                     s.append(str(oracle_ok[i].item()))
 
@@ -173,18 +176,24 @@ class TypedTextSequenceTestState(TextSequenceTestState):
         scores, out_len = net_out
         out = self.convert_to_index(scores)
 
-        if len(self.bad_sequences) < self.max_bad_samples:
-            t = torch.nonzero(~ok_mask).squeeze(-1)[:self.max_bad_samples - len(self.bad_sequences)]
+        t = torch.nonzero(~ok_mask).squeeze(-1)
 
-            for i in t:
-                out_end = None if out_len is None else out_len[i].item()
+        for i in t:
+            out_end = None if out_len is None else out_len[i].item()
+
+            in_text = self.in_to_text(data["in"].select(self.batch_dim, i)[: int(data["in_len"][i].item())].cpu().numpy().tolist()),
+            out_text = self.out_to_text(data["out"].select(self.batch_dim, i)[: int(data["out_len"][i].item())].cpu().numpy().tolist())
+            ttype = self.type_names[int(data["type"][i].item())]
+            ref = self.out_to_text(out.select(self.batch_dim, i)[:out_end].cpu().numpy().tolist())
+
+            print(f"In:\t{in_text}\tOut:\t{out_text}\tType:\t{ttype}\tRef:\t{ref}")
+
+            if len(self.bad_sequences) < self.max_bad_samples:
                 self.bad_sequences.append((
-                    self.in_to_text(data["in"].select(self.batch_dim, i)[: int(data["in_len"][i].item())].
-                                    cpu().numpy().tolist()),
-                    self.out_to_text(data["out"].select(self.batch_dim, i)[: int(data["out_len"][i].item())].
-                                     cpu().numpy().tolist()),
-                    self.type_names[int(data["type"][i].item())],
-                    self.out_to_text(out.select(self.batch_dim, i)[:out_end].cpu().numpy().tolist())
+                    in_text,
+                    out_text,
+                    ttype,
+                    ref
                 ))
 
         for t in torch.unique(data["type"]).int().cpu().numpy().tolist():
