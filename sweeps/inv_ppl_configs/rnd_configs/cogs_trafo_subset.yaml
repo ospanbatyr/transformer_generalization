@@ -35,9 +35,9 @@ parameters:
   stop_after:
     value: 15000
   seed:
-    value: 42
+    value: 0
   indices_path:
-    value: cartography/subsets/cogs/inv_ppl_random_16_0.5.pickle
+    value: cartography/subsets/0/cogs/inv_ppl_random_10_0.33.pickle
   sweep_id_for_grid_search:
     distribution: categorical
     values:

@@ -35,9 +35,9 @@ parameters:
   stop_after:
     value: 15000
   seed:
-    value: 123
+    value: 0
   indices_path:
-    value: cartography/subsets/cogs/chia_easy_to_learn_10.pickle
+    value: cartography/subsets/0/cogs/chia_easy_to_learn_10_0.33.pickle
   sweep_id_for_grid_search:
     distribution: categorical
     values:

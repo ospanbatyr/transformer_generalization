@@ -67,7 +67,7 @@ echo
 ################################################################################
 
 # converge epoch 10, inv ppl htl
-wandb agent osmanbatur/transformer_generalization/2pt6o9dj
+wandb agent osmanbatur/transformer_generalization/zfe6o1vq
 
 # DON'T USE ADDRESS BELOW. 
 # DO USE TOKEN BELOW
