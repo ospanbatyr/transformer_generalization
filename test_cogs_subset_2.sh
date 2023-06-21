@@ -26,18 +26,15 @@
 #
 # -= Resources =-
 #
+
 #SBATCH --job-name=wandb_s2s_comp
 #SBATCH --nodes 1
 #SBATCH --ntasks-per-node=2
-#SBATCH --partition=ai
-#SBATCH --account=ai
-#SBATCH --qos=ai
+#SBATCH --partition=short
+#SBATCH --time=2:00:00
 #SBATCH --mem=24G
 #SBATCH --gres=gpu:tesla_t4:1
-#SBATCH --time=1-00:00:00
-#SBATCH --output=slurm_logs/cogs_s2s-%J.log
-
-
+#SBATCH --output=slurm_logs/cogs_chia_htl_10_0.33-%J.log
 
 
 # Please read before you run: http://login.kuacc.ku.edu.tr/#h.3qapvarv2g49
@@ -68,7 +65,7 @@ echo
 ##################### !!! DO NOT EDIT ABOVE THIS LINE !!! ######################
 ################################################################################
 
-wandb agent osmanbatur/transformer_generalization/0r47osem
+wandb agent osmanbatur/transformer_generalization/j1quy4i5
 
 # DON'T USE ADDRESS BELOW. 
 # DO USE TOKEN BELOW

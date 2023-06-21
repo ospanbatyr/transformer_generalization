@@ -35,7 +35,7 @@
 #SBATCH --mem=24G
 #SBATCH --gres=gpu:tesla_t4:1
 #SBATCH --time=1-00:00:00
-#SBATCH --output=slurm_logs/cogs_s2s-%J.log
+#SBATCH --output=slurm_logs/cogs_inv_ppl_htl_10_0.33-%J.log
 
 
 
@@ -68,7 +68,7 @@ echo
 ##################### !!! DO NOT EDIT ABOVE THIS LINE !!! ######################
 ################################################################################
 
-wandb agent osmanbatur/transformer_generalization/gh6zfoia
+wandb agent osmanbatur/transformer_generalization/v0uiwb4p
 
 # DON'T USE ADDRESS BELOW. 
 # DO USE TOKEN BELOW

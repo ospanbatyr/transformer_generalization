@@ -41,7 +41,7 @@ parameters:
   finetune_steps:
     value: 15000
   indices_path:
-    value: cartography/subsets/cogs/bleu_easy_to_learn_16_0.5.pickle
+    value: cartography/subsets/empty.pickle
   sweep_id_for_grid_search:
     distribution: categorical
     values:

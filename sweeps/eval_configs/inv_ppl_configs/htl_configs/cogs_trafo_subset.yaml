@@ -37,11 +37,11 @@ parameters:
   seed:
     value: 42
   finetune_sweep_name:
-    value: izwkrf4x
+    value: qn48cn8g
   finetune_steps:
     value: 15000
   indices_path:
-    value: cartography/subsets/cfq/empty.pickle
+    value: cartography/subsets/empty.pickle
   sweep_id_for_grid_search:
     distribution: categorical
     values:

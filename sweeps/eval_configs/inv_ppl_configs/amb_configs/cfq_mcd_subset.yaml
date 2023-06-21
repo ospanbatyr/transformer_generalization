@@ -30,7 +30,7 @@ parameters:
   batch_size:
     value: 1024
   indices_path:
-    value: cartography/subsets/cfq/inv_ppl_ambiguous_20_0.5.pickle
+    value: cartography/subsets/empty.pickle
   seed:
     value: 42
   finetune_sweep_name:
