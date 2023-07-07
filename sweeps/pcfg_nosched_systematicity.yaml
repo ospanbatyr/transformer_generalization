@@ -24,8 +24,6 @@ parameters:
     value: systematicity
   lr:
     value: 1e-4
-  seed:
-    value: 0
   stop_after:
     value: 300000
   amp:

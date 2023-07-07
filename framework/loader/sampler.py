@@ -23,9 +23,7 @@ class InfiniteSampler(torch.utils.data.Sampler):
             self.indices = self._read_indices(indices_path)
             print(f"self.indices: {len(self.indices)}")
         
-        print("")
-
-        print(f"Seed is set to {self.seed}", flush=True)
+        print(f"Seed is set to {seed}", flush=True)
 
     def _read_indices(self, indices_path: str) -> set:
         return read_pickle(indices_path)

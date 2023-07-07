@@ -35,8 +35,6 @@ parameters:
     value: 50000
   batch_size:
     value: 256
-  seed:
-    value: 123
   amp:
     value: 1
   sweep_id_for_grid_search:

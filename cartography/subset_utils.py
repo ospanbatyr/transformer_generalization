@@ -23,6 +23,29 @@ create_ratio_fname = lambda m, cr, c_e, rto: f"{MTRC2ABV[m]}_{CRIT2ABV[cr]}_{c_e
 create_comb_fname = lambda m, cr1, cr2, c_e: f"{MTRC2ABV[m]}_{CRIT2ABV[cr1]}_{CRIT2ABV[cr2]}_{c_e}.pickle"
 outputs_path = lambda x: f"../scores/{x}"
 
+# These seeds are necessary as each seed corresponds to a different training dynamics set
+# These seeds are randomly generated and used during each training, and saved for later usage
+DATASET2SEEDS = {
+    "cfq": ["1685001853", "3960970220", "2895201892"],
+    "cogs": ["83256541", "4190663204", "3926193344"],
+}
+
+DATASET2CEPOCHS = {
+    "cfq": 20,
+    "cogs": 10,
+}
+
+
+def dnames_cepochs():
+    dnames, cepochs = [], []
+    for dataset_name, seeds in DATASET2SEEDS.items():
+        dirs = [f"{seed}/{dataset_name}" for seed in seeds]
+        dataset_cepochs = [DATASET2CEPOCHS[dataset_name] for seed in seeds]
+        dnames.extend(dirs)
+        cepochs.extend(dataset_cepochs)
+    
+    return zip(dnames, cepochs)
+
 
 def seed_everything(seed: int):
     random.seed(seed)
@@ -92,7 +115,9 @@ def get_scores(dir_path: str, converge_epoch: int, string_truncate: int, min_epo
     file_list = sorted(file_list, key= lambda s: int(s.split("_")[1].replace("stepidx", "")))
 
     idxs, ppls, chias, bleus = [], [], [], []
-    for file_name in file_list:
+    
+    print("Starting reading of training dynamics...")
+    for file_name in tqdm(file_list):
         file_path = f"{dir_path}/{file_name}"
         # print(file_name)
         if "ppl" in file_path:
@@ -105,21 +130,27 @@ def get_scores(dir_path: str, converge_epoch: int, string_truncate: int, min_epo
             idxs.extend(read_pickle(file_path).tolist())
         else:
             output_csv_name = file_path
+    print("Finished reading of training dynamics.")
+
 
     items = list(zip(idxs, ppls, chias, bleus))
     items = sorted(items, key=lambda i: i[0])
     idx_dict: Dict[int, Dict[str, List[float]]] = {}
-    for item in items:
+    
+    print("Starting processing scores for Pandas DataFrames...")
+    for item in tqdm(items):
         if item[0] not in idx_dict:
             idx_dict[item[0]] = {"inv_ppl": [1 / item[1]], "chia": [item[2]], "bleu": [item[3]]}
         else:
             idx_dict[item[0]]["inv_ppl"].append(1 / item[1])
             idx_dict[item[0]]["chia"].append(item[2])
             idx_dict[item[0]]["bleu"].append(item[3])
+    print("Finished processing scores for Pandas DataFrames.")
 
     i2s = {"Index": [], "In": [], "Out": [], "In abbv.": [], "Out abbv.": [], "In Len": [], "Out Len": [], "In Rarity": [], "Out Rarity": []}
 
-    for k, v in idx_to_sentences.items():
+    print("Further processing of examples for length and rarity stats...")
+    for k, v in tqdm(idx_to_sentences.items()):
         i2s["Index"].append(k)
         i2s["In"].append(v["in"])
         i2s["Out"].append(v["out"])
@@ -129,10 +160,12 @@ def get_scores(dir_path: str, converge_epoch: int, string_truncate: int, min_epo
         i2s["Out Len"].append(len(v["out"].split()))
 
     in_v, out_v = get_word_freqs(i2s)
-    for k, v in idx_to_sentences.items():
+    for k, v in tqdm(idx_to_sentences.items()):
         in_rarity, out_rarity = get_rarity(v["in"], v["out"], in_v, out_v)
         i2s["In Rarity"].append(in_rarity)
         i2s["Out Rarity"].append(out_rarity)
+        
+    print("Finished calculating rarity and length.")
 
     return idx_dict, i2s
 
@@ -153,28 +186,32 @@ def create_vocab(df):
 
 
 def calculate_statistics(epoch: int, idx_dict: Dict[int, Dict[str, List[float]]], i2s: Dict[str, List[Any]]) -> pd.DataFrame:
-	idx_mean_var_dict: Dict[int, Dict[str, Tuple[float, float]]] = {}
-	idx_mean_var_list: List[Tuple[int, float, float, float, float, float, float, float, float]] = []
-	score_names = ["inv_ppl", "chia", "bleu"]
-	for idx, scores in idx_dict.items():
-		scores_list = []
-		for score_name in score_names:
-			score_arr = np.array(scores[score_name][:epoch])
-			mean = score_arr.mean()
-			var = score_arr.var()
-			scores_list.extend([mean, var])
-		
-		idx_mean_var_list.append(tuple((idx, *scores_list)))
+    idx_mean_var_dict: Dict[int, Dict[str, Tuple[float, float]]] = {}
+    idx_mean_var_list: List[Tuple[int, float, float, float, float, float, float, float, float]] = []
+    score_names = ["inv_ppl", "chia", "bleu"]
 
-	i2s_df = pd.DataFrame.from_dict(i2s)
+    print("Starting calculating confidence and variability stats over epochs...")
+    for idx, scores in tqdm(idx_dict.items()):
+        scores_list = []
+        for score_name in score_names:
+            score_arr = np.array(scores[score_name][:epoch])
+            mean = score_arr.mean()
+            var = score_arr.var()
+            scores_list.extend([mean, var])
+
+        idx_mean_var_list.append(tuple((idx, *scores_list)))
+
+    print("Finished calculating statistics.")
+
+    i2s_df = pd.DataFrame.from_dict(i2s)
 
 
-	df = pd.DataFrame(idx_mean_var_list, columns =['Index', 'Confidence - Inverse PPL', 'Variability - Inverse PPL', \
-													'Confidence - CHIA', 'Variability - CHIA', \
-													'Confidence - BLEU', 'Variability - BLEU'])
+    df = pd.DataFrame(idx_mean_var_list, columns =['Index', 'Confidence - Inverse PPL', 'Variability - Inverse PPL', \
+                                                    'Confidence - CHIA', 'Variability - CHIA', \
+                                                    'Confidence - BLEU', 'Variability - BLEU'])
 
-	cartography = pd.merge(df, i2s_df, on="Index")
-	return cartography
+    cartography = pd.merge(df, i2s_df, on="Index")
+    return cartography
 
 
 def save_subset(subset_idx: set, ds_name: str, subset_fname: str) -> None:    

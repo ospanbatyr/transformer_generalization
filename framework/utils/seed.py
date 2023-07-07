@@ -8,10 +8,10 @@ from typing import Optional
 
 
 def fix(offset: int = 0, fix_cudnn: bool = True):
-    random.seed(0x12345678 + offset)
-    torch.manual_seed(0x0DABA52 + offset)
-    torch.cuda.manual_seed(0x0DABA52 + 1 + offset)
-    np.random.seed(0xC1CAFA52 + offset)
+    random.seed(offset)
+    torch.manual_seed(offset)
+    torch.cuda.manual_seed(offset)
+    np.random.seed(offset)
 
     if fix_cudnn:
         torch.backends.cudnn.deterministic = True

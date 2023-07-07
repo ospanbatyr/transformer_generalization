@@ -13,6 +13,7 @@ from .argument_parser import ArgumentParser
 import torch
 import time
 import subprocess
+import random
 from copy import deepcopy
 
 
@@ -66,7 +67,6 @@ class TrainingHelper:
         self.arg_parser.add_argument("-log", default="tb")
         self.arg_parser.add_argument("-save_interval", default="5000", parser=self.arg_parser.int_or_none_parser)
         self.arg_parser.add_argument("-wandb_save_interval", default="None", parser=self.arg_parser.int_or_none_parser)
-        self.arg_parser.add_argument("-seed", default="none", parser=self.arg_parser.int_or_none_parser)
         self.arg_parser.add_argument("-gpu", default="auto", help="use this gpu")
         self.arg_parser.add_argument("-keep_alive", default=False)
         self.arg_parser.add_argument("-sweep_id_for_grid_search", default=0,
@@ -104,8 +104,11 @@ class TrainingHelper:
 
     def setup_environment(self):
         use_gpu(self.args.gpu)
-        if self.args.seed is not None:
-            seed.fix(self.args.seed)
+
+        generated_seed = random.randrange(2**32 - 1)
+        print(f"RANDOMLY GENERATED AND USED SEED IS: {generated_seed}", flush=True)
+        seed.fix(generated_seed)
+        self.seed = generated_seed
 
         self.device = torch.device("cuda") if self.use_cuda() else torch.device("cpu")
 
