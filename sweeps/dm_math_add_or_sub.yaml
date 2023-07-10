@@ -1,0 +1,37 @@
+program: main.py
+command:
+  - ${env}
+  - python3
+  - ${program}
+  - ${args}
+method: grid
+metric:
+  name: validation/mean_accuracy
+  goal: maximize
+parameters:
+  name:
+    value: trafo_scan
+  log:
+    value: wandb
+  profile:
+    value: deepmind_math
+  task:
+    value: dm_math_transformer
+  transformer.variant:
+    values:
+      - noscale
+  dm_math.task:
+    values:
+      - arithmetic__add_or_sub
+  lr:
+    value: 1e-4
+  stop_after:
+    value: 50000
+  batch_size:
+    value: 256
+  amp:
+    value: 1
+  sweep_id_for_grid_search:
+    distribution: categorical
+    values:
+      - 1

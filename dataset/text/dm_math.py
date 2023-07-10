@@ -11,7 +11,6 @@ import shutil
 import bisect
 import torch.utils.data
 
-
 # Not using text dataset, because it is too big. Uses mmap and some tricks to save memory.
 class DeepmindMathDataset(torch.utils.data.Dataset):
     VERSION = 8
@@ -317,6 +316,7 @@ class DeepmindMathDataset(torch.utils.data.Dataset):
             "out": a,
             "in_len": q.shape[0],
             "out_len": a.shape[0],
+            "idx": np.asarray(item, np.int32),
             "type": tid
         }
 

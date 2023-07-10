@@ -34,7 +34,7 @@
 #SBATCH --qos=ai
 #SBATCH --mem=24G
 #SBATCH --gres=gpu:tesla_v100:1
-#SBATCH --time=1-12:00:00
+#SBATCH --time=2-00:00:00
 #SBATCH --output=slurm_logs/pcfg_s2s-%J.log
 
 
@@ -68,7 +68,7 @@ echo
 ##################### !!! DO NOT EDIT ABOVE THIS LINE !!! ######################
 ################################################################################
 
-wandb agent osmanbatur/transformer_generalization/9nmifff7
+wandb agent osmanbatur/transformer_generalization/iepcv1ds
 
 # DON'T USE ADDRESS BELOW. 
 # DO USE TOKEN BELOW

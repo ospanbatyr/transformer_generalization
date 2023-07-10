@@ -1,0 +1,39 @@
+program: main.py
+command:
+  - ${env}
+  - python3
+  - ${program}
+  - ${args}
+method: grid
+metric:
+  name: validation/mean_accuracy
+  goal: maximize
+parameters:
+  log:
+    value: wandb
+  profile:
+    value: cfq_trafo
+  transformer.variant:
+    values:
+      - noscale
+  cfq.split:
+    values:
+      - mcd1
+  amp:
+    value: 1
+  lr:
+    value: 0.9
+  lr_sched.type: 
+    value: noam
+  lr_warmup:
+    value: 4000
+  batch_size:
+    value: 1024
+  indices_path:
+    distribution: categorical
+    values:
+      - cartography/subsets/1685001853/cfq/chia_ambiguous_20_0.5.pickle
+      - cartography/subsets/3960970220/cfq/chia_ambiguous_20_0.5.pickle
+      - cartography/subsets/2895201892/cfq/chia_ambiguous_20_0.5.pickle
+
+# wandb sweep --name cfq_mcd_subset.yaml sweeps/chia/ambiguous/20/0.5/cfq_mcd_subset.yaml

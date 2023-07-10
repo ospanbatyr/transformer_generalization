@@ -6,6 +6,7 @@ from .transformer_mixin import TransformerMixin
 class DMMathTransformer(TransformerMixin, Task):
     def create_datasets(self):
         self.batch_dim = 1
+        print(self.helper.args.dm_math.tasks, flush=True)
         self.train_set = dataset.DeepmindMathDataset(self.helper.args.dm_math.tasks, sets=[f"train_{s}"
                                                      for s in self.helper.args.dm_math.train_splits])
 

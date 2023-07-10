@@ -1,0 +1,3 @@
+    wandb sweep --name pcfg_nosched_systematicity_subset sweeps/inv_ppl/easy_to_learn/140/0.5/pcfg_nosched_systematicity_subset.yaml
+    wandb sweep --name pcfg_nosched_systematicity_subset sweeps/inv_ppl/ambiguous/140/0.5/pcfg_nosched_systematicity_subset.yaml
+    wandb sweep --name pcfg_nosched_systematicity_subset sweeps/inv_ppl/hard_to_learn/140/0.5/pcfg_nosched_systematicity_subset.yaml

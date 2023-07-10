@@ -105,7 +105,9 @@ class Task:
         for name in dataset_names:
             if "scan" in self.helper.args.task:
                 return name + "_" + self.helper.args.scan.train_split[0][0]
-            if name in self.helper.args.task:
+            elif "dm_math" in self.helper.args.task:
+                return name + "_" + self.helper.args.dm_math.tasks[0]
+            elif name in self.helper.args.task:
                 return name
 
         assert False, "Wrong dataset name or task definition"

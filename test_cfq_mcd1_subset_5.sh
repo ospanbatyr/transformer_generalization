@@ -34,7 +34,7 @@
 #SBATCH --qos=ai
 #SBATCH --mem=24G
 #SBATCH --gres=gpu:tesla_t4:1
-#SBATCH --time=1-00:00:00
+#SBATCH --time=2-00:00:00
 #SBATCH --output=slurm_logs/cfq_s2s-%J.log
 
 
@@ -67,7 +67,7 @@ echo
 ################################################################################
 
 # easy to learn - 0.5 ratio
-wandb agent osmanbatur/transformer_generalization/gaehb2s8
+wandb agent osmanbatur/transformer_generalization/kz8e4y0r
 
 # DON'T USE ADDRESS BELOW. 
 # DO USE TOKEN BELOW

@@ -17,6 +17,7 @@ import random, os
 
 STRING_TRUNCATE = 50
 MTRC2ABV = {"Inverse PPL": "inv_ppl", "Neg PPL": "neg_ppl", "CHIA": "chia", "BLEU": "bleu"}
+ABV2MTRC = {"inv_ppl": "Inverse PPL", "neg_ppl": "Neg PPL", "chia": "CHIA", "bleu": "BLEU"}
 CRIT2ABV = {"Easy to Learn": "easy_to_learn", "Ambiguous": "ambiguous", "Hard to Learn": "hard_to_learn", "Random": "random"}
 create_fname = lambda m, cr, c_e: f"{MTRC2ABV[m]}_{CRIT2ABV[cr]}_{c_e}.pickle"
 create_ratio_fname = lambda m, cr, c_e, rto: f"{MTRC2ABV[m]}_{CRIT2ABV[cr]}_{c_e}_{rto}.pickle"
@@ -24,16 +25,59 @@ create_comb_fname = lambda m, cr1, cr2, c_e: f"{MTRC2ABV[m]}_{CRIT2ABV[cr1]}_{CR
 outputs_path = lambda x: f"../scores/{x}"
 
 # These seeds are necessary as each seed corresponds to a different training dynamics set
-# These seeds are randomly generated and used during each training, and saved for later usage
+# These seeds are randomly generated and used during each 100% training, and saved for later usage
 DATASET2SEEDS = {
     "cfq": ["1685001853", "3960970220", "2895201892"],
     "cogs": ["83256541", "4190663204", "3926193344"],
+    "pcfg": ["42"],
 }
 
 DATASET2CEPOCHS = {
     "cfq": 20,
     "cogs": 10,
+    "pcfg": 140,
 }
+
+
+def wandb_command(config_name, config_path):
+    config_path = "/".join(config_path.split("/")[1:])
+    return f"wandb sweep --name {config_name} {config_path}"
+
+
+def wandb_config_name(seed, dname, metric, criterion, conv_epoch, ratio, mode="single"):
+    if mode == "single":
+        return f"cartography/subsets/{seed}/{dname}/{MTRC2ABV[metric]}_{CRIT2ABV[criterion]}_{conv_epoch}_{ratio}.pickle"
+
+
+def create_wandb_config(dname, metric, criterion, conv_epoch, ratio, indices_paths, mode="single", **kwargs):    
+    if dname == "cfq":
+        config_dir = "../sweeps/templates/cfq_mcd_subset_tmp.yaml"
+        config_name = "cfq_mcd_subset.yaml"
+    elif dname == "cogs":
+        config_dir = "../sweeps/templates/cogs_trafo_subset_tmp.yaml"
+        config_name = "cogs_trafo_subset.yaml"
+    else:
+        assert False, "Dataset name is different from cfq or cogs"
+
+    with open(config_dir, "r") as f:
+        config_template = f.read()
+        
+    if mode == "single":
+        new_config_dir = f"../sweeps/{MTRC2ABV[metric]}/{CRIT2ABV[criterion]}/{conv_epoch}/{ratio}"
+        new_config_path = f"../sweeps/{MTRC2ABV[metric]}/{CRIT2ABV[criterion]}/{conv_epoch}/{ratio}/{config_name}"
+        
+    for i, indices_path in enumerate(indices_paths):
+        config_template = config_template.replace(f"<INDICES_PATH_{i}>", indices_path)
+        
+    run_command = wandb_command(config_name, new_config_path)
+    config_template = config_template.replace("<WANDB_COMMAND>", run_command)
+    
+    os.makedirs(new_config_dir, exist_ok=True)
+    
+    with open(new_config_path, "w") as f:
+        f.write(config_template)
+        
+    return run_command
 
 
 def dnames_cepochs():
@@ -188,8 +232,10 @@ def create_vocab(df):
 def calculate_statistics(epoch: int, idx_dict: Dict[int, Dict[str, List[float]]], i2s: Dict[str, List[Any]]) -> pd.DataFrame:
     idx_mean_var_dict: Dict[int, Dict[str, Tuple[float, float]]] = {}
     idx_mean_var_list: List[Tuple[int, float, float, float, float, float, float, float, float]] = []
+    
+    bins = np.linspace(0.0, 1.0, 10)
     score_names = ["inv_ppl", "chia", "bleu"]
-
+    
     print("Starting calculating confidence and variability stats over epochs...")
     for idx, scores in tqdm(idx_dict.items()):
         scores_list = []
@@ -198,19 +244,25 @@ def calculate_statistics(epoch: int, idx_dict: Dict[int, Dict[str, List[float]]]
             mean = score_arr.mean()
             var = score_arr.var()
             scores_list.extend([mean, var])
-
+            if score_name == "bleu":
+                correctness = np.isclose(score_arr, 1.0).mean()
+                correctness = np.digitize(correctness, bins, right=False) * 0.1
+                scores_list.append(correctness)
+        
+        
         idx_mean_var_list.append(tuple((idx, *scores_list)))
-
+        
     print("Finished calculating statistics.")
 
     i2s_df = pd.DataFrame.from_dict(i2s)
 
-
     df = pd.DataFrame(idx_mean_var_list, columns =['Index', 'Confidence - Inverse PPL', 'Variability - Inverse PPL', \
                                                     'Confidence - CHIA', 'Variability - CHIA', \
-                                                    'Confidence - BLEU', 'Variability - BLEU'])
+                                                    'Confidence - BLEU', 'Variability - BLEU', 'Correctness'])
 
     cartography = pd.merge(df, i2s_df, on="Index")
+    df["Correctness"] = df["Correctness"].apply(lambda x: round(x, 1))
+    
     return cartography
 
 
@@ -254,7 +306,7 @@ def choose_subset(df: pd.DataFrame, metric: str, criteria: str, ds_name: str, su
     remove_ex_i = []
     
     for i in trange(int(len(df)*ratio), len(df)):
-        item_index, new_in, new_out = sorted_df.iloc[i, 0], sorted_df.iloc[i, 7], sorted_df.iloc[i, 8]
+        item_index, new_in, new_out = sorted_df.iloc[i, 0], sorted_df.iloc[i, 8], sorted_df.iloc[i, 9]
         new_in_tokens, new_out_tokens = set(new_in.split()), set(new_out.split())
         
         if (new_in_tokens - subset_in_v) or (new_out_tokens - subset_out_v):
@@ -271,7 +323,7 @@ def choose_subset(df: pd.DataFrame, metric: str, criteria: str, ds_name: str, su
         if len(remove_ex_i) == len(add_ex_i):
             break
             
-        item_index, ex_in, ex_out = sorted_df.iloc[i, 0], sorted_df.iloc[i, 7], sorted_df.iloc[i, 8]
+        item_index, ex_in, ex_out = sorted_df.iloc[i, 0], sorted_df.iloc[i, 8], sorted_df.iloc[i, 9]
         ex_in_counter, ex_out_counter = Counter(ex_in.split()), Counter(ex_out.split())
         
         upd_in_counter = in_counter - ex_in_counter
